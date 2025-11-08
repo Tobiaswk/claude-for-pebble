@@ -24,12 +24,13 @@ var baseUrl = getQueryParam('base_url');
 var model = getQueryParam('model');
 var systemMessage = getQueryParam('system_message');
 var webSearchEnabled = getQueryParam('web_search_enabled');
+var mcpServers = getQueryParam('mcp_servers');
 
 // Get return_to for emulator support (falls back to pebblejs://close# for real hardware)
 var returnTo = getQueryParam('return_to') || 'pebblejs://close#';
 
 // Initialize form when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   var apiKeyInput = document.getElementById('api-key');
   var advancedRows = document.querySelectorAll('.advanced-field');
 
@@ -41,11 +42,12 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('model').value = model || defaults.model;
   document.getElementById('system-message').value = systemMessage || defaults.system_message;
   document.getElementById('web-search').checked = webSearchEnabled === 'true';
+  document.getElementById('mcp-servers').value = mcpServers || '';
 
   // Function to toggle advanced fields visibility
   function toggleAdvancedFields() {
     var hasApiKey = apiKeyInput.value.trim() !== '';
-    advancedRows.forEach(function(row) {
+    advancedRows.forEach(function (row) {
       row.style.display = hasApiKey ? '' : 'none';
     });
   }
@@ -57,13 +59,30 @@ document.addEventListener('DOMContentLoaded', function() {
   apiKeyInput.addEventListener('input', toggleAdvancedFields);
 
   // Save button handler
-  document.getElementById('save-button').addEventListener('click', function() {
+  document.getElementById('save-button').addEventListener('click', function () {
+    var mcpServersValue = document.getElementById('mcp-servers').value.trim();
+
+    // Validate MCP servers JSON if provided
+    if (mcpServersValue) {
+      try {
+        var parsed = JSON.parse(mcpServersValue);
+        if (!Array.isArray(parsed)) {
+          alert('MCP Servers must be a JSON array');
+          return;
+        }
+      } catch (e) {
+        alert('Invalid JSON in MCP Servers field: ' + e.message);
+        return;
+      }
+    }
+
     var settings = {
       api_key: apiKeyInput.value.trim(),
       base_url: document.getElementById('base-url').value.trim(),
       model: document.getElementById('model').value.trim(),
       system_message: document.getElementById('system-message').value.trim(),
-      web_search_enabled: document.getElementById('web-search').checked.toString()
+      web_search_enabled: document.getElementById('web-search').checked.toString(),
+      mcp_servers: mcpServersValue
     };
 
     // Send settings back to Pebble (works for both emulator and real hardware)
@@ -72,13 +91,14 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Reset button handler
-  document.getElementById('reset-button').addEventListener('click', function() {
+  document.getElementById('reset-button').addEventListener('click', function () {
     // Clear all form fields
     apiKeyInput.value = '';
     document.getElementById('base-url').value = defaults.base_url;
     document.getElementById('model').value = defaults.model;
     document.getElementById('system-message').value = defaults.system_message;
     document.getElementById('web-search').checked = false;
+    document.getElementById('mcp-servers').value = '';
 
     // Toggle advanced fields visibility
     toggleAdvancedFields();
@@ -89,7 +109,8 @@ document.addEventListener('DOMContentLoaded', function() {
       base_url: defaults.base_url,
       model: defaults.model,
       system_message: defaults.system_message,
-      web_search_enabled: 'false'
+      web_search_enabled: 'false',
+      mcp_servers: ''
     };
 
     var url = returnTo + encodeURIComponent(JSON.stringify(settings));
