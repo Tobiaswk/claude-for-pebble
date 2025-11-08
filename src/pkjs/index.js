@@ -28,6 +28,7 @@ function getClaudeResponse(messages) {
   var model = localStorage.getItem('model') || 'claude-haiku-4-5';
   var systemMessage = localStorage.getItem('system_message') || "You're running on a Pebble smartwatch. Please respond in plain text without any formatting, keeping your responses within 1-3 sentences.";
   var webSearchEnabled = localStorage.getItem('web_search_enabled') === 'true';
+  var mcpServersJson = localStorage.getItem('mcp_servers');
 
   if (!apiKey) {
     console.log('No API key configured');
@@ -44,7 +45,14 @@ function getClaudeResponse(messages) {
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.setRequestHeader('x-api-key', apiKey);
   xhr.setRequestHeader('anthropic-version', '2023-06-01');
-  xhr.timeout = 5000;
+
+  // Add MCP beta header if MCP servers are configured
+  if (mcpServersJson && mcpServersJson.trim().length > 0) {
+    xhr.setRequestHeader('anthropic-beta', 'mcp-client-2025-04-04');
+    console.log('MCP beta header added');
+  }
+
+  xhr.timeout = 15000;
 
   xhr.onload = function () {
     if (xhr.status === 200) {
@@ -54,14 +62,29 @@ function getClaudeResponse(messages) {
         // Extract all text blocks from content array
         if (data.content && data.content.length > 0) {
           var responseText = '';
+          var mcpToolsUsed = 0;
 
           for (var i = 0; i < data.content.length; i++) {
             var block = data.content[i];
             if (block.type === 'text' && block.text) {
               responseText += block.text;
+            } else if (block.type === 'mcp_tool_use') {
+              // MCP tool is being called - log for debugging
+              mcpToolsUsed++;
+              console.log('MCP tool called: ' + block.name + ' on server ' + block.server_name);
+            } else if (block.type === 'mcp_tool_result') {
+              // MCP tool result received - log for debugging
+              console.log('MCP tool result received for tool_use_id: ' + block.tool_use_id);
+              responseText += '\n\n';
             } else if (block.type === 'server_tool_use') {
               responseText += '\n\n';
             }
+          }
+
+          console.log(JSON.stringify(data.content, null, 2));
+
+          if (mcpToolsUsed > 0) {
+            console.log('Response used ' + mcpToolsUsed + ' MCP tool(s)');
           }
 
           responseText = responseText.trim();
@@ -135,6 +158,19 @@ function getClaudeResponse(messages) {
     }];
   }
 
+  // Add MCP servers if configured
+  if (mcpServersJson && mcpServersJson.trim().length > 0) {
+    try {
+      var mcpServers = JSON.parse(mcpServersJson);
+      if (Array.isArray(mcpServers) && mcpServers.length > 0) {
+        requestBody.mcp_servers = mcpServers;
+        console.log('Added ' + mcpServers.length + ' MCP server(s) to request');
+      }
+    } catch (e) {
+      console.log('Error parsing MCP servers JSON: ' + e);
+    }
+  }
+
   console.log('Request body: ' + JSON.stringify(requestBody));
   xhr.send(JSON.stringify(requestBody));
 }
@@ -177,6 +213,7 @@ Pebble.addEventListener('showConfiguration', function () {
   var model = localStorage.getItem('model') || '';
   var systemMessage = localStorage.getItem('system_message') || '';
   var webSearchEnabled = localStorage.getItem('web_search_enabled') || 'false';
+  var mcpServers = localStorage.getItem('mcp_servers') || '';
 
   // Build configuration URL
   var url = 'https://breitburg.github.io/claude-for-pebble/config/';
@@ -185,6 +222,7 @@ Pebble.addEventListener('showConfiguration', function () {
   url += '&model=' + encodeURIComponent(model);
   url += '&system_message=' + encodeURIComponent(systemMessage);
   url += '&web_search_enabled=' + encodeURIComponent(webSearchEnabled);
+  url += '&mcp_servers=' + encodeURIComponent(mcpServers);
 
   console.log('Opening configuration page: ' + url);
   Pebble.openURL(url);
@@ -197,7 +235,7 @@ Pebble.addEventListener('webviewclosed', function (e) {
     console.log('Settings received: ' + JSON.stringify(settings));
 
     // Save or clear settings in local storage
-    var keys = ['api_key', 'base_url', 'model', 'system_message', 'web_search_enabled'];
+    var keys = ['api_key', 'base_url', 'model', 'system_message', 'web_search_enabled', 'mcp_servers'];
     keys.forEach(function (key) {
       if (settings[key] && settings[key].trim() !== '') {
         localStorage.setItem(key, settings[key]);
