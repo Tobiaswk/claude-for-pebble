@@ -19,7 +19,7 @@ static void background_update_proc(Layer *layer, GContext *ctx) {
   // Only draw background for user messages (rectangle spanning full width)
   if (bubble->is_user) {
     GRect bounds = layer_get_bounds(layer);
-    graphics_context_set_fill_color(ctx, PBL_IF_COLOR_ELSE(GColorRajah, GColorLightGray));
+    graphics_context_set_fill_color(ctx, PBL_IF_COLOR_ELSE(GColorLightGray, GColorBlack));
     graphics_fill_rect(ctx, bounds, 0, GCornerNone);  // No rounded corners
   }
   // Claude messages have no background (white on white)
@@ -64,7 +64,7 @@ MessageBubble* message_bubble_create(const char *text, bool is_user, int max_wid
   text_layer_set_font(bubble->text_layer, font);
   text_layer_set_text_alignment(bubble->text_layer, GTextAlignmentLeft);
   text_layer_set_background_color(bubble->text_layer, GColorClear);
-  text_layer_set_text_color(bubble->text_layer, GColorBlack);
+  text_layer_set_text_color(bubble->text_layer, is_user ? PBL_IF_COLOR_ELSE(GColorBlack, GColorWhite) : GColorBlack);
   layer_add_child(bubble->layer, text_layer_get_layer(bubble->text_layer));
 
   return bubble;

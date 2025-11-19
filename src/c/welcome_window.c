@@ -6,6 +6,7 @@ extern void show_chat_window_from_welcome(void);
 
 // Global state for the welcome window
 static Window *s_window;
+static StatusBarLayer *s_status_bar;
 static ClaudeSparkLayer *s_spark;
 static TextLayer *s_text_layer;
 static ActionBarLayer *s_action_bar;
@@ -21,7 +22,12 @@ static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  // Create action bar first
+  // Create status bar
+  s_status_bar = status_bar_layer_create();
+  status_bar_layer_set_colors(s_status_bar, GColorWhite, GColorBlack);
+  layer_add_child(window_layer, status_bar_layer_get_layer(s_status_bar));
+
+  // Create action bar
   s_action_bar = action_bar_layer_create();
   action_bar_layer_add_to_window(s_action_bar, window);
   action_bar_layer_set_click_config_provider(s_action_bar, click_config_provider);
@@ -32,15 +38,17 @@ static void window_load(Window *window) {
 
   // Calculate available width (accounting for action bar)
   int content_width = bounds.size.w - ACTION_BAR_WIDTH;
+  int status_bar_height = STATUS_BAR_LAYER_HEIGHT;
 
-  // Calculate positioning for centered content
+  // Calculate positioning for centered content (below status bar)
   int spark_size = 60;
   int text_height = 50;  // Approximate height for 2 lines of GOTHIC_24_BOLD
   int gap = 10;  // Gap between spark and text
   int total_content_height = spark_size + gap + text_height;
 
-  // Center vertically in available space
-  int start_y = (bounds.size.h - total_content_height) / 2;
+  // Center vertically in available space below status bar
+  int available_height = bounds.size.h - status_bar_height;
+  int start_y = status_bar_height + (available_height - total_content_height) / 2;
 
   // Create and position spark
   s_spark = claude_spark_layer_create(
@@ -74,6 +82,12 @@ static void click_config_provider(void *context) {
 }
 
 static void window_unload(Window *window) {
+  // Destroy status bar
+  if (s_status_bar) {
+    status_bar_layer_destroy(s_status_bar);
+    s_status_bar = NULL;
+  }
+
   // Destroy action bar and icon
   if (s_action_icon_select) {
     gbitmap_destroy(s_action_icon_select);
