@@ -330,14 +330,6 @@ static void action_button_update_proc(Layer *layer, GContext *ctx) {
   // Draw filled circle
   graphics_context_set_fill_color(ctx, GColorBlack);
   graphics_fill_radial(ctx, button_rect, GOvalScaleModeFitCircle, radius, 0, TRIG_MAX_ANGLE);
-
-  // Draw 1px outer outline (B/W displays only)
-#ifdef PBL_BW
-  GRect outline_rect = grect_inset(button_rect, GEdgeInsets(-1));
-  graphics_context_set_stroke_color(ctx, GColorWhite);
-  graphics_context_set_stroke_width(ctx, 1);
-  graphics_draw_arc(ctx, outline_rect, GOvalScaleModeFitCircle, 0, TRIG_MAX_ANGLE);
-#endif
 }
 
 static void click_config_provider(void *context) {

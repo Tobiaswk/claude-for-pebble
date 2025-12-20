@@ -6,6 +6,7 @@ extern void show_chat_window_from_welcome(void);
 
 // Global state for the welcome window
 static Window *s_window;
+static Layer *s_status_bar_container;
 static StatusBarLayer *s_status_bar;
 static ClaudeSparkLayer *s_spark;
 static TextLayer *s_text_layer;
@@ -22,10 +23,12 @@ static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  // Create status bar
+  // Create status bar (accounting for action bar width)
   s_status_bar = status_bar_layer_create();
   status_bar_layer_set_colors(s_status_bar, GColorWhite, GColorBlack);
-  layer_add_child(window_layer, status_bar_layer_get_layer(s_status_bar));
+  Layer *status_layer = status_bar_layer_get_layer(s_status_bar);
+  layer_set_frame(status_layer, GRect(0, 0, bounds.size.w - ACTION_BAR_WIDTH, STATUS_BAR_LAYER_HEIGHT));
+  layer_add_child(window_layer, status_layer);
 
   // Create action bar
   s_action_bar = action_bar_layer_create();
