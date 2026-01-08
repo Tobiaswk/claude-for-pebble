@@ -69,17 +69,25 @@ function getOpenRouterResponse(messages) {
               responseText += choice.message.content;
             }
             // TODO; Fix MCP compat
-            // else if (choice. === 'mcp_tool_use') {
-            //   // MCP tool is being called - log for debugging
-            //   mcpToolsUsed++;
-            //   console.log('MCP tool called: ' + choice.name + ' on server ' + choice.server_name);
-            // } else if (choice.type === 'mcp_tool_result') {
-            //   // MCP tool result received - log for debugging
-            //   console.log('MCP tool result received for tool_use_id: ' + choice.tool_use_id);
-            //   responseText += '\n\n';
-            // } else if (choice.type === 'server_tool_use') {
-            //   responseText += '\n\n';
-            // }
+            if(choice.message.tool_calls) {
+                for(var i = 0; choice.message.tool_calls.length; i++) {
+                    var tool = choice.message.tool_calls[i];
+
+                    mcpToolsUsed++;
+                    console.log('MCP tool called: ' + tool.type + ' on server ' + choice.server_name);
+                } 
+            }
+            else if (choice.msessage.tool_calls === 'mcp_tool_use') {
+              // MCP tool is being called - log for debugging
+              mcpToolsUsed++;
+              console.log('MCP tool called: ' + choice.name + ' on server ' + choice.server_name);
+            } else if (choice.type === 'mcp_tool_result') {
+              // MCP tool result received - log for debugging
+              console.log('MCP tool result received for tool_use_id: ' + choice.tool_use_id);
+              responseText += '\n\n';
+            } else if (choice.type === 'server_tool_use') {
+              responseText += '\n\n';
+            }
           }
 
           console.log(JSON.stringify(data.content, null, 2));
