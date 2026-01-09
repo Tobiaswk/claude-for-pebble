@@ -172,7 +172,7 @@ function getOpenRouterResponse(messages) {
 
   // Add web search tool if enabled
   if (webSearchEnabled) {
-      requestBody.model = requestBody.model + ':online',
+      requestBody.model = requestBody.model + ':online';
   }
 
   // Add MCP servers if configured
