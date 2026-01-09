@@ -54,12 +54,6 @@ function getOpenRouterResponse(messages) {
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.setRequestHeader('Authorization', 'Bearer ' + apiKey);
 
-  // Add MCP beta header if MCP servers are configured
-  if (mcpServersJson && mcpServersJson.trim().length > 0) {
-    // TODO; Fix MCP compat
-    // xhr.setRequestHeader('anthropic-beta', 'mcp-client-2025-04-04');
-    // console.log('MCP beta header added');
-  }
 
   xhr.timeout = 15000;
 
@@ -162,6 +156,10 @@ function getOpenRouterResponse(messages) {
     max_tokens: 256,
     messages: messages
   };
+
+  if (mcpServersJson && mcpServersJson.trim().length > 0) {
+    // TODO; Fix MCP compat
+  }
 
   // Add system message if provided
   if (systemMessage) {
