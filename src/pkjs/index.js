@@ -21,10 +21,19 @@ function parseConversation(encoded) {
   return messages;
 }
 
+function getModelResponse(messages) {
+  if(localStorage.getItem('base_url').includes('openrouter')) {
+      return getOpenRouterResponse(messages);
+  } else {
+      return getClaudeResponse(messages);
+  }
+}
+
 function getOpenRouterResponse(messages) {
   var apiKey = localStorage.getItem('api_key');
-  var baseUrl = localStorage.getItem('base_url') || 'https://openrouter.ai/api/v1/chat/completions';
-  var model = localStorage.getItem('model') || 'anthropic/claude-haiku-4.5';
+  var baseUrl = localStorage.getItem('base_url');
+  var model = localStorage.getItem('model') ||
+      'anthropic/claude-haiku-4.5';
   var systemMessage = localStorage.getItem('system_message') || "You're running on a Pebble smartwatch. Please respond in plain text without any formatting, keeping your responses within 1-3 sentences.";
   var webSearchEnabled = localStorage.getItem('web_search_enabled') === 'true';
   var mcpServersJson = localStorage.getItem('mcp_servers');
@@ -37,12 +46,13 @@ function getOpenRouterResponse(messages) {
     return;
   }
 
-  console.log('Sending request to Claude API with ' + messages.length + ' messages');
+  console.log('Sending request to OpenRouter API with ' + messages.length + ' messages');
+  console.log('API key ' + apiKey);
 
   var xhr = new XMLHttpRequest();
   xhr.open('POST', baseUrl, true);
   xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.setRequestHeader('Authorization', 'Bearer' + apiKey);
+  xhr.setRequestHeader('Authorization', 'Bearer ' + apiKey);
 
   // Add MCP beta header if MCP servers are configured
   if (mcpServersJson && mcpServersJson.trim().length > 0) {
@@ -69,25 +79,25 @@ function getOpenRouterResponse(messages) {
               responseText += choice.message.content;
             }
             // TODO; Fix MCP compat
-            if(choice.message.tool_calls) {
-                for(var i = 0; choice.message.tool_calls.length; i++) {
-                    var tool = choice.message.tool_calls[i];
+            // if(choice.message.tool_calls) {
+            //     for(var i = 0; choice.message.tool_calls.length; i++) {
+            //         var tool = choice.message.tool_calls[i];
 
-                    mcpToolsUsed++;
-                    console.log('MCP tool called: ' + tool.type + ' on server ' + choice.server_name);
-                } 
-            }
-            else if (choice.msessage.tool_calls === 'mcp_tool_use') {
-              // MCP tool is being called - log for debugging
-              mcpToolsUsed++;
-              console.log('MCP tool called: ' + choice.name + ' on server ' + choice.server_name);
-            } else if (choice.type === 'mcp_tool_result') {
-              // MCP tool result received - log for debugging
-              console.log('MCP tool result received for tool_use_id: ' + choice.tool_use_id);
-              responseText += '\n\n';
-            } else if (choice.type === 'server_tool_use') {
-              responseText += '\n\n';
-            }
+            //         mcpToolsUsed++;
+            //         console.log('MCP tool called: ' + tool.type + ' on server ' + choice.server_name);
+            //     } 
+            // }
+            // else if (choice.msessage.tool_calls === 'mcp_tool_use') {
+            //   // MCP tool is being called - log for debugging
+            //   mcpToolsUsed++;
+            //   console.log('MCP tool called: ' + choice.name + ' on server ' + choice.server_name);
+            // } else if (choice.type === 'mcp_tool_result') {
+            //   // MCP tool result received - log for debugging
+            //   console.log('MCP tool result received for tool_use_id: ' + choice.tool_use_id);
+            //   responseText += '\n\n';
+            // } else if (choice.type === 'server_tool_use') {
+            //   responseText += '\n\n';
+            // }
           }
 
           console.log(JSON.stringify(data.content, null, 2));
@@ -368,7 +378,7 @@ Pebble.addEventListener('appmessage', function (e) {
     var messages = parseConversation(encoded);
     console.log('Parsed ' + messages.length + ' messages');
 
-    getClaudeResponse(messages);
+    getModelResponse(messages);
   }
 });
 
