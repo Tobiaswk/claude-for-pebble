@@ -157,6 +157,7 @@ function getOpenRouterResponse(messages) {
     messages: messages
   };
 
+  /// Add MCP if provided
   if (mcpServersJson && mcpServersJson.trim().length > 0) {
     // TODO; Fix MCP compat
   }
@@ -171,12 +172,7 @@ function getOpenRouterResponse(messages) {
 
   // Add web search tool if enabled
   if (webSearchEnabled) {
-    requestBody.tools = [{
-      model: model + ':online',
-      type: 'web_search_20250305',
-      name: 'web_search',
-      max_uses: 5
-    }];
+      requestBody.model = requestBody.model + ':online',
   }
 
   // Add MCP servers if configured
