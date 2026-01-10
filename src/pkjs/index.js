@@ -157,11 +157,6 @@ function getOpenRouterResponse(messages) {
     messages: messages
   };
 
-  /// Add MCP if provided
-  if (mcpServersJson && mcpServersJson.trim().length > 0) {
-    // TODO; Fix MCP compat
-  }
-
   // Add system message if provided
   if (systemMessage) {
       requestBody.messages.unshift({
@@ -175,12 +170,13 @@ function getOpenRouterResponse(messages) {
       requestBody.model = requestBody.model + ':online';
   }
 
-  // Add MCP servers if configured
+  // Add MCP servers if configured; these are called tools in OpenRouter lingo;
+  // https://openrouter.ai/docs/api/api-reference/chat/send-chat-completion-request#request.body.tools
   if (mcpServersJson && mcpServersJson.trim().length > 0) {
     try {
       var mcpServers = JSON.parse(mcpServersJson);
       if (Array.isArray(mcpServers) && mcpServers.length > 0) {
-        requestBody.mcp_servers = mcpServers;
+        requestBody.tools = mcpServers;
         console.log('Added ' + mcpServers.length + ' MCP server(s) to request');
       }
     } catch (e) {
